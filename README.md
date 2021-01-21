@@ -48,6 +48,14 @@ Add to AndroidManifest.xml (if these lines do not exist yet):
 
 Open `android/build.gradle` file and make sure there is `google()` or `maven { url "https://maven.google.com" }` added to the `repositories` block.
 
+Optionally you can change the notification icon color by defining `notification_accent` color. To do this, open (or create)  `android/<app_main_module>/src/res/values/colors.xml` and add `<color name="notification_accent">#16CA93</color>` to the `resources` node. So the file looks like the following:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="notification_accent">#16CA93</color>
+</resources>
+```
+Here `#16CA93` is a HEX RGB representation of the color.
 
 ## Usage
 ```javascript
