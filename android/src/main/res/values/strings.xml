@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="notification_channel_name_location_service">Tracking location</string>
+    <string name="settings">Settings</string>
+    <string name="no_thanks">No thanks</string>
+    <string name="alert_message_location_permission">The app requires Location permission to track your geolocation.</string>
+    <string name="geolocation_notification_title">Location tracking enabled</string>
+    <string name="geolocation_notification_message">App is capturing coordinates</string>
+</resources>
