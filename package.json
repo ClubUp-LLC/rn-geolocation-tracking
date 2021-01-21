@@ -1,0 +1,40 @@
+{
+  "name": "react-native-geolocation-tracking",
+  "title": "React Native Geolocation Tracking",
+  "version": "1.0.0",
+  "description": "A module to track geo-location and upload the coordinates to the provided server via HTTP Post.",
+  "main": "index.js",
+  "files": [
+    "README.md",
+    "android",
+    "index.js",
+    "ios",
+    "react-native-geolocation-tracking.podspec"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ClubUp-LLC/rn-geolocation-tracking.git",
+    "baseUrl": "https://github.com/ClubUp-LLC/rn-geolocation-tracking"
+  },
+  "keywords": [
+    "react-native"
+  ],
+  "author": {
+    "name": "RustamG",
+    "email": "ryder.norco@gmail.com"
+  },
+  "license": "MIT",
+  "licenseFilename": "LICENSE",
+  "readmeFilename": "README.md",
+  "peerDependencies": {
+    "react": "^16.8.1",
+    "react-native": ">=0.60.0-rc.0 <1.0.x"
+  },
+  "devDependencies": {
+    "react": "^16.9.0",
+    "react-native": "^0.61.5"
+  }
+}
