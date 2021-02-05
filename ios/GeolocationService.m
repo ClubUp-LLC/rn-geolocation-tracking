@@ -39,7 +39,7 @@ static GeolocationService *_sharedManager = nil;
         _locationArray = @[].mutableCopy;
         _manager = [CLLocationManager new];
         _manager.delegate = self;
-        _manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation;
+        _manager.desiredAccuracy = kCLLocationAccuracyBest;
         [_manager setAllowsBackgroundLocationUpdates: YES];
         [_manager setActivityType:CLActivityTypeFitness];
       
