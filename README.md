@@ -4,7 +4,10 @@
 The module allows to start/stop geolocation tracking. When a new location is available the module submits it via HTTP Post request.
 
 ## Installation
-`$ npm install react-native-geolocation-tracking --save`
+Add the following to `dependencies` block inside package.json
+```
+    "react-native-geolocation-tracking": "https://github.com/ClubUp-LLC/rn-geolocation-tracking",
+```
 
 Then you need to perform a few manual steps described below.
 #### iOS
@@ -114,9 +117,9 @@ As you can see in the code above, `startTracking()` expects the following parame
 In Android both `updatesIntervalSeconds` and `distanceFilter` should pass between location updates. So if only the distance since last coordinate is more than `distanceFilter`, but the last update was less than `updatesIntervalSeconds`, the location update will not be provided by Android OS.
 
 ##### iOS specific
-iOS only uses `distanceFilter` to configure [CLLocationManager](https://developer.apple.com/documentation/corelocation/cllocationmanager) updates. Activity type is hardcoded to [CLActivityTypeOtherNavigation](https://developer.apple.com/documentation/corelocation/clactivitytype/othernavigation).
+iOS only uses `distanceFilter` to configure [CLLocationManager](https://developer.apple.com/documentation/corelocation/cllocationmanager) updates. Activity type is hardcoded to [CLActivityTypeOtherNavigation](https://developer.apple.com/documentation/corelocation/clactivitytype/othernavigation). The configuration is [here](https://github.com/ClubUp-LLC/rn-geolocation-tracking/blob/main/ios/GeolocationService.m#L40).
       
-
+### HTTP payload
 Example of HTTP payload:
 ```
 {
