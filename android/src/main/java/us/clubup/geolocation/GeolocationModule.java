@@ -98,8 +98,13 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
                                                                 // Show the dialog by calling startResolutionForResult(),
                                                                 // and check the result in onActivityResult().
                                                                 ResolvableApiException resolvable = (ResolvableApiException) e;
-                                                                resolvable.startResolutionForResult(getCurrentActivity(), REQUEST_CODE_LOCATION_SETTINGS);
-                                                            } catch (IntentSender.SendIntentException sendEx) {
+                                                                Activity activity = getCurrentActivity();
+                                                                if (activity != null) {
+                                                                    resolvable.startResolutionForResult(activity,
+                                                                            REQUEST_CODE_LOCATION_SETTINGS);
+                                                                }
+                                                            }
+                                                            catch (IntentSender.SendIntentException sendEx) {
                                                                 // Ignore the error.
                                                             }
                                                         }
@@ -198,7 +203,8 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
         if (requestCode == REQUEST_CODE_LOCATION_SETTINGS) {
             if (resultCode == Activity.RESULT_OK) {
                 checkPermissionsAndStart();
-            } else {
+            }
+            else {
                 locationServiceDisabled();
             }
         }

@@ -47,7 +47,11 @@ public class GeolocationService extends Service {
     private static final int NOTIFICATION_ID_TRACKING = 3862;
     private static final String NOTIFICATION_CHANNEL_ID = "location_service_channel";
 
-    private ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+    @Nullable
+    private static GeolocationService instance = null;
+
+    private final ExecutorService executorService = Executors.newFixedThreadPool(4);
 
     private int startId;
 
@@ -62,7 +66,15 @@ public class GeolocationService extends Service {
     public void onCreate() {
 
         super.onCreate();
-        createNotificationChannel();
+        instance = this;
+        createNotificationChannel(this);
+    }
+
+    @Override
+    public void onDestroy() {
+
+        super.onDestroy();
+        instance = null;
     }
 
     @Override
@@ -90,11 +102,8 @@ public class GeolocationService extends Service {
     private void handleStart(Intent intent, int startId) {
 
         this.startId = startId;
-        createNotificationChannel();
         startAsForeground();
-
         config = intent.getParcelableExtra(EXTRA_CONFIG);
-
         startTracking();
     }
 
@@ -111,21 +120,6 @@ public class GeolocationService extends Service {
         stopSelf(startId);
     }
 
-    private void createNotificationChannel() {
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            NotificationChannel channel = new NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    getString(R.string.notification_channel_name_location_service),
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            notificationManager.createNotificationChannel(channel);
-        }
-    }
-
     private void startAsForeground() {
 
         Notification notification = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
@@ -133,6 +127,7 @@ public class GeolocationService extends Service {
                 .setContentTitle(getString(R.string.geolocation_notification_title))
                 .setContentText(getString(R.string.geolocation_notification_message))
                 .setColor(getNotificationColor())
+                .setOngoing(true)
                 .build();
         startForeground(NOTIFICATION_ID_TRACKING, notification);
     }
@@ -171,11 +166,6 @@ public class GeolocationService extends Service {
     private void startTracking() {
 
         Log.d(TAG, "startTracking");
-
-        if (isTracking) {
-            Log.w(TAG, "Already tracking.");
-            return;
-        }
 
         isTracking = true;
 
@@ -220,15 +210,52 @@ public class GeolocationService extends Service {
         }
     };
 
+    private static void createNotificationChannel(Context context) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    context.getString(R.string.notification_channel_name_location_service),
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
     public static void startTracking(Context context, GeolocationConfig config) {
+
+        boolean alreadyTracking = instance != null && instance.isTracking;
+        if (alreadyTracking) {
+            Log.w(TAG, "Already tracking.");
+            return;
+        }
 
         Intent intent = new Intent(context, GeolocationService.class);
         intent.setAction(ACTION_START);
         intent.putExtra(EXTRA_CONFIG, config);
-        context.startService(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                context.startForegroundService(intent);
+            }
+            catch (IllegalStateException | SecurityException e) {
+                // couldn't start a foreground service when the app is in background
+                Log.e(TAG, "Unable to start service", e);
+            }
+        }
+        else {
+            context.startService(intent);
+        }
     }
 
     public static void stopTracking(Context context) {
+
+        boolean alreadyStopped = instance == null || !instance.isTracking;
+        if (alreadyStopped) {
+            Log.w(TAG, "Already not tracking.");
+            return;
+        }
 
         Intent intent = new Intent(context, GeolocationService.class);
         intent.setAction(ACTION_STOP);
