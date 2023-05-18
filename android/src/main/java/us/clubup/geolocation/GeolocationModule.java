@@ -136,13 +136,15 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
     private void requestForegroundLocationPermission() {
 
         Activity activity = getCurrentActivity();
-
+        if (activity == null) {
+            return;
+        }
         if (ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)) {
 
             new AlertDialog.Builder(activity)
                     .setMessage(R.string.alert_message_location_permission)
                     .setNegativeButton(R.string.no_thanks, ((dialog, which) -> missingPermission()))
-                    .setPositiveButton(R.string.settings, (dialog, which) -> goToSettings())
+                    .setPositiveButton(R.string.settings, (dialog, which) -> goToSettings(activity))
                     .show();
         }
         else {
@@ -165,12 +167,12 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
         }
     }
 
-    private void goToSettings() {
+    private void goToSettings(Context context) {
 
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.fromParts("package", getContext().getPackageName(), null));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        getCurrentActivity().startActivity(intent);
+        context.startActivity(intent);
     }
 
     private void missingPermission() {
