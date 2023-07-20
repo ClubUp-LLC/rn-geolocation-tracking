@@ -3,7 +3,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef void (^AccessLocationAcceptedBlock)(void);
-typedef void (^AccessLocationRejectedBlock)(NSString *reason);
+typedef void (^AccessLocationRejectedBlock)(NSString *reason, NSString *code);
 
 @interface GeolocationService : NSObject
 

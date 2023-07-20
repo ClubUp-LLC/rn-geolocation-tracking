@@ -92,10 +92,10 @@ static GeolocationService *_sharedManager = nil;
       [_manager requestWhenInUseAuthorization];
       break;
     case kCLAuthorizationStatusRestricted:
-      _rejectBlock(@"Access to geolocation is limited");
+      _rejectBlock(@"Access to geolocation is limited", @"missing_permission");
       break;
     case kCLAuthorizationStatusDenied:
-      _rejectBlock(@"Access to geolocation is denied");
+      _rejectBlock(@"Access to geolocation is denied", @"missing_permission");
       break;
     case kCLAuthorizationStatusAuthorizedAlways:
       _accesBlock();
@@ -104,7 +104,7 @@ static GeolocationService *_sharedManager = nil;
       _accesBlock();
       break;
     default:
-      _rejectBlock(@"Unknown error");
+      _rejectBlock(@"Unknown error", @"unknown");
       break;
   }
   

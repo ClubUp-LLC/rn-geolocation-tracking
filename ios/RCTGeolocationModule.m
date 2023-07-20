@@ -22,8 +22,8 @@ RCT_EXPORT_METHOD(startTracking: (NSString *)url
                                                            distanceFilter: meters];
           [[GeolocationService sharedManager] startTracking];
           resolve(@YES);
-        } andFailure:^(NSString * _Nonnull reason) {
-          reject(@"event_failure", reason, nil);
+        } andFailure:^(NSString * _Nonnull reason, NSString * _Nonnull code) {
+          reject(code, reason, nil);
         }];
     });
 }
