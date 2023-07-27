@@ -1,7 +1,7 @@
 {
   "name": "react-native-geolocation-tracking",
   "title": "React Native Geolocation Tracking",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A module to track geo-location and upload the coordinates to the provided server via HTTP Post.",
   "main": "index.js",
   "files": [
