@@ -41,6 +41,7 @@ static GeolocationService *_sharedManager = nil;
         _manager.delegate = self;
         _manager.desiredAccuracy = kCLLocationAccuracyBest;
         [_manager setAllowsBackgroundLocationUpdates: YES];
+        [_manager setShowsBackgroundLocationIndicator: YES];
         [_manager setActivityType:CLActivityTypeFitness];
       
         _iso8601Formatter = [NSDateFormatter new];
