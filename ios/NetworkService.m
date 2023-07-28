@@ -2,6 +2,7 @@
 
 @interface NetworkService ()
 @property (nonnull, nonatomic, strong) NSString* url;
+@property (nonnull, nonatomic, strong) NSString* failureUrl;
 @property (nonnull, nonatomic, strong) NSDictionary<NSString*, NSString*>* headers;
 @property (nonnull, nonatomic, strong) NSString* method;
 @property (nonatomic) int timeoutInterval;
@@ -9,10 +10,11 @@
 
 @implementation NetworkService
 
-- (id)initWithUrl:(NSString *)url authParams:(nonnull NSDictionary *)params {
+- (id)initWithUrl:(NSString *)url failureUrl: (NSString *)failureUrl authParams:(nonnull NSDictionary *)params {
   self = [super init];
   if (self) {
     _url = url;
+    _failureUrl = failureUrl;
     NSMutableDictionary* paramsDictionary = [[NSMutableDictionary alloc] initWithDictionary: params];
     [paramsDictionary setValue:@"application/json; charset=utf-8" forKey:@"Content-Type"];
     _headers = [[NSDictionary alloc] initWithDictionary: paramsDictionary];
@@ -22,8 +24,11 @@
   return self;
 }
 
-- (void)sendRequestWith:(nonnull id)params {
-  NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:_url]];
+- (void)sendRequestWith:(nonnull id)params failure:(BOOL)failure {
+    if (failure && _failureUrl == nil) {
+        return;
+    }
+    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:failure ? _failureUrl : _url]];
   
   if (request == nil) {
     return;

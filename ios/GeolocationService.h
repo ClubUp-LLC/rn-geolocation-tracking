@@ -12,6 +12,7 @@ typedef void (^AccessLocationRejectedBlock)(NSString *reason, NSString *code);
 @property (nonatomic) BOOL isTracking;
 
 - (void) configRequestManagerWithUrl: (NSString *) url
+                          failureUrl: (NSString *) failureUrl
                               params: (NSDictionary *) params
                       updatingPeriod: (int) period
                       distanceFilter: (int) meters;

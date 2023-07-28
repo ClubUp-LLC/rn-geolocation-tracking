@@ -6,17 +6,19 @@
 
 RCT_EXPORT_MODULE(Geolocation);
 
-RCT_EXPORT_METHOD(startTracking: (NSString *)url
+RCT_EXPORT_METHOD(startTracking: (NSString *) url
+                  failureUrl: (NSString *) failureUrl
                   parms:(NSDictionary *) dictionary
                   updatesIntervalSeconds: (int) seconds
                   distanceFilter: (int) meters
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
+                  resolver:(RCTPromiseResolveBlock) resolve
+                  rejecter:(RCTPromiseRejectBlock) reject) {
   
     dispatch_async(dispatch_get_main_queue(), ^(void){
              
         [[GeolocationService sharedManager] checkOrRequestPermissionsWithSuccess:^{
           [[GeolocationService sharedManager] configRequestManagerWithUrl: url
+                                                               failureUrl: failureUrl
                                                                    params: dictionary
                                                            updatingPeriod: seconds
                                                            distanceFilter: meters];

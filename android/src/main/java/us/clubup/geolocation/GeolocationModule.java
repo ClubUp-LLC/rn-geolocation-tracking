@@ -56,9 +56,10 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
 
     @ReactMethod
     @SuppressWarnings("unused")
-    public void startTracking(String uploadUrl, ReadableMap headers, int updatesIntervalSeconds, int distanceFilter, Promise promise) {
+    public void startTracking(String uploadUrl, String failureUrl, ReadableMap headers, int updatesIntervalSeconds, int distanceFilter,
+            Promise promise) {
 
-        this.config = new GeolocationConfig(uploadUrl, headers.toHashMap(), updatesIntervalSeconds, distanceFilter);
+        this.config = new GeolocationConfig(uploadUrl, failureUrl, headers.toHashMap(), updatesIntervalSeconds, distanceFilter);
         this.startPromise = promise;
 
         performChecksAndStart();

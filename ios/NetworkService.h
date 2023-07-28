@@ -4,8 +4,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NetworkService : NSObject
 
-- (id) initWithUrl: (NSString *) url authParams: (NSDictionary*) params;
-- (void) sendRequestWith: (nonnull id) params;
+- (id) initWithUrl: (NSString *) url failureUrl: (NSString *) failureUrl authParams: (NSDictionary*) params;
+- (void) sendRequestWith: (nonnull id) params failure:(BOOL) failure;
 
 @end
 

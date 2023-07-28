@@ -20,19 +20,19 @@
 static GeolocationService *_sharedManager = nil;
 
 + (GeolocationService *)sharedManager {
-  
+
     if (!_sharedManager) {
         @synchronized(self) {
             if (!_sharedManager)
               _sharedManager = [GeolocationService new];
         }
     }
-  
+
     return _sharedManager;
 }
 
 - (instancetype)init {
-  
+
     self = [super init];
     if (self) {
         _isTracking = NO;
@@ -43,14 +43,14 @@ static GeolocationService *_sharedManager = nil;
         [_manager setAllowsBackgroundLocationUpdates: YES];
         [_manager setShowsBackgroundLocationIndicator: YES];
         [_manager setActivityType:CLActivityTypeFitness];
-      
+
         _iso8601Formatter = [NSDateFormatter new];
         [_iso8601Formatter setLocale: [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
         [_iso8601Formatter setDateFormat:@"yyyy-MM-dd'T'HH:mm:ssZZZZZ"];
         [_iso8601Formatter setCalendar: [NSCalendar calendarWithIdentifier:NSCalendarIdentifierGregorian]];
 
     }
-    
+
     return self;
 }
 
@@ -62,12 +62,13 @@ static GeolocationService *_sharedManager = nil;
 
 
 - (void)configRequestManagerWithUrl:(NSString *)url
+                         failureUrl:(NSString *)failureUrl
                              params:(NSDictionary *)params
                      updatingPeriod:(int)period
                      distanceFilter:(int)meters {
 
   _manager.distanceFilter = meters;
-  _networkService = [[NetworkService alloc] initWithUrl:url authParams:params];
+  _networkService = [[NetworkService alloc] initWithUrl:url failureUrl: failureUrl authParams:params];
 }
 
 - (void)startTracking {
@@ -83,11 +84,11 @@ static GeolocationService *_sharedManager = nil;
 }
 
 - (void) validatePermissionWithStatus: (CLAuthorizationStatus) status {
-  
+
   if ((_accesBlock == nil) && (_rejectBlock == nil)) {
       return;
   }
-  
+
   switch (status) {
     case kCLAuthorizationStatusNotDetermined:
       [_manager requestWhenInUseAuthorization];
@@ -108,7 +109,7 @@ static GeolocationService *_sharedManager = nil;
       _rejectBlock(@"Unknown error", @"unknown");
       break;
   }
-  
+
   if (status != kCLAuthorizationStatusNotDetermined) {
       _accesBlock = nil;
       _rejectBlock = nil;
@@ -122,20 +123,25 @@ static GeolocationService *_sharedManager = nil;
 }
 
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray<CLLocation *> *)locations {
-  
+
   NSMutableArray<NSDictionary *> *locationArray = @[].mutableCopy;
-  
+
   for (CLLocation *location in locations) {
     NSMutableDictionary *dictionary = @{}.mutableCopy;
     [dictionary setValue: [NSString stringWithFormat:@"%@", [_iso8601Formatter stringFromDate: location.timestamp]] forKey:@"time"];
     [dictionary setValue: [NSString stringWithFormat:@"%f", location.coordinate.latitude] forKey:@"latitude"];
     [dictionary setValue: [NSString stringWithFormat:@"%f", location.coordinate.longitude] forKey:@"longitude"];
-    [dictionary setValue:[NSString stringWithFormat:@"%f", location.horizontalAccuracy] forKey:@"accuracy"];
-    [dictionary setValue:[NSString stringWithFormat:@"%f", location.altitude] forKey:@"altitude"];
+    [dictionary setValue: [NSString stringWithFormat:@"%f", location.horizontalAccuracy] forKey:@"accuracy"];
+    [dictionary setValue: [NSString stringWithFormat:@"%f", location.altitude] forKey:@"altitude"];
     [locationArray addObject:dictionary];
   }
-  
-  [_networkService sendRequestWith: @{@"points" : locationArray}];
+
+  [_networkService sendRequestWith: @{@"points" : locationArray} failure: NO];
+}
+
+- (void)locationManager:(CLLocationManager *)manager didFailWithError:(NSError *)error {
+
+    [_networkService sendRequestWith: @{ @"message": error.description} failure: YES];
 }
 
 @end
