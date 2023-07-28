@@ -43,6 +43,7 @@ static GeolocationService *_sharedManager = nil;
         [_manager setAllowsBackgroundLocationUpdates: YES];
         [_manager setShowsBackgroundLocationIndicator: YES];
         [_manager setActivityType:CLActivityTypeFitness];
+        [_manager setPausesLocationUpdatesAutomatically: NO];
 
         _iso8601Formatter = [NSDateFormatter new];
         [_iso8601Formatter setLocale: [NSLocale localeWithLocaleIdentifier:@"en_US_POSIX"]];
