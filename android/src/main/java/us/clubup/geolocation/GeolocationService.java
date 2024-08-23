@@ -10,6 +10,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.content.res.TypedArray;
 import android.location.Location;
 import android.os.Build;
@@ -129,7 +130,13 @@ public class GeolocationService extends Service {
                 .setColor(getNotificationColor())
                 .setOngoing(true)
                 .build();
-        startForeground(NOTIFICATION_ID_TRACKING, notification);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID_TRACKING, notification);
+        } else {
+            startForeground(NOTIFICATION_ID_TRACKING, notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+        }
     }
 
     @ColorInt
