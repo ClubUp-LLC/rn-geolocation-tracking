@@ -135,7 +135,7 @@ public class GeolocationService extends Service {
             startForeground(NOTIFICATION_ID_TRACKING, notification);
         } else {
             startForeground(NOTIFICATION_ID_TRACKING, notification,
-                    FOREGROUND_SERVICE_TYPE_LOCATION);
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
         }
     }
 
