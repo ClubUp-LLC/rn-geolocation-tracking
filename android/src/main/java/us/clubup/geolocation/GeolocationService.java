@@ -129,7 +129,13 @@ public class GeolocationService extends Service {
                 .setColor(getNotificationColor())
                 .setOngoing(true)
                 .build();
-        startForeground(NOTIFICATION_ID_TRACKING, notification);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID_TRACKING, notification)
+        } else {
+            startForeground(NOTIFICATION_ID_TRACKING, notification,
+                    FOREGROUND_SERVICE_TYPE_LOCATION)
+        }
     }
 
     @ColorInt
