@@ -131,10 +131,10 @@ public class GeolocationService extends Service {
                 .build();
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID_TRACKING, notification)
+            startForeground(NOTIFICATION_ID_TRACKING, notification);
         } else {
             startForeground(NOTIFICATION_ID_TRACKING, notification,
-                    FOREGROUND_SERVICE_TYPE_LOCATION)
+                    FOREGROUND_SERVICE_TYPE_LOCATION);
         }
     }
 
