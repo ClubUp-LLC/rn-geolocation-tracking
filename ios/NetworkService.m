@@ -1,5 +1,7 @@
 #import "NetworkService.h"
 
+static const NSTimeInterval PointsUploadTimeout = 30;
+
 @interface NetworkService ()
 @property (nonnull, nonatomic, strong) NSString* url;
 @property (nonnull, nonatomic, strong) NSString* failureUrl;
@@ -48,6 +50,36 @@
     
   }] resume];
   
+}
+
+- (void)uploadPoints:(NSArray<NSDictionary *> *)points completion:(PointsUploadCompletion)completion {
+  NSURL *url = [NSURL URLWithString:_url];
+  if (url == nil) {
+    completion(0, nil, [NSError errorWithDomain:NSURLErrorDomain code:NSURLErrorBadURL userInfo:nil]);
+    return;
+  }
+  NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
+  request.HTTPMethod = @"POST";
+  [request setAllHTTPHeaderFields: _headers];
+  request.HTTPBody = [NSJSONSerialization dataWithJSONObject:@{@"points": points} options:0 error:nil];
+
+  [[[self.class pointsUploadSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    NSInteger statusCode = [response isKindOfClass:[NSHTTPURLResponse class]] ? ((NSHTTPURLResponse *) response).statusCode : 0;
+    NSLog(@"HTTP Status: %ld", (long)statusCode);
+    completion(statusCode, data, error);
+  }] resume];
+}
+
++ (NSURLSession *)pointsUploadSession {
+  static NSURLSession *session;
+  static dispatch_once_t once;
+  dispatch_once(&once, ^{
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.timeoutIntervalForRequest = PointsUploadTimeout;
+    configuration.timeoutIntervalForResource = PointsUploadTimeout;
+    session = [NSURLSession sessionWithConfiguration:configuration];
+  });
+  return session;
 }
 
 @end
