@@ -19,6 +19,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/ClubUp-LLC/react-native-geolocation-tracking.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,c,m,swift}"
+  s.exclude_files = "ios/Tests/**"
   s.requires_arc = true
 
   s.dependency "React"

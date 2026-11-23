@@ -10,6 +10,11 @@
 		CB40AFD025B82B4400F1E1E0 /* GeolocationService.m in Sources */ = {isa = PBXBuildFile; fileRef = CB40AFCA25B82B4400F1E1E0 /* GeolocationService.m */; };
 		CB40AFD125B82B4400F1E1E0 /* RCTGeolocationModule.m in Sources */ = {isa = PBXBuildFile; fileRef = CB40AFCE25B82B4400F1E1E0 /* RCTGeolocationModule.m */; };
 		CB40AFD225B82B4400F1E1E0 /* NetworkService.m in Sources */ = {isa = PBXBuildFile; fileRef = CB40AFCF25B82B4400F1E1E0 /* NetworkService.m */; };
+		2951C0DE0000000000000003 /* CrewTrackingPointQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 2951C0DE0000000000000002 /* CrewTrackingPointQueue.m */; };
+		2951C0DE0000000000000006 /* CrewTrackingSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 2951C0DE0000000000000005 /* CrewTrackingSession.m */; };
+		2951C0DE0000000000000009 /* CrewTrackingTime.m in Sources */ = {isa = PBXBuildFile; fileRef = 2951C0DE0000000000000008 /* CrewTrackingTime.m */; };
+		2951C0DE000000000000000C /* CrewTrackingUploadResult.m in Sources */ = {isa = PBXBuildFile; fileRef = 2951C0DE000000000000000B /* CrewTrackingUploadResult.m */; };
+		2951C0DE000000000000000F /* TrackingStartOptions.m in Sources */ = {isa = PBXBuildFile; fileRef = 2951C0DE000000000000000E /* TrackingStartOptions.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -32,6 +37,16 @@
 		CB40AFCD25B82B4400F1E1E0 /* NetworkService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetworkService.h; sourceTree = "<group>"; };
 		CB40AFCE25B82B4400F1E1E0 /* RCTGeolocationModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RCTGeolocationModule.m; sourceTree = "<group>"; };
 		CB40AFCF25B82B4400F1E1E0 /* NetworkService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NetworkService.m; sourceTree = "<group>"; };
+		2951C0DE0000000000000001 /* CrewTrackingPointQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrewTrackingPointQueue.h; sourceTree = "<group>"; };
+		2951C0DE0000000000000002 /* CrewTrackingPointQueue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrewTrackingPointQueue.m; sourceTree = "<group>"; };
+		2951C0DE0000000000000004 /* CrewTrackingSession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrewTrackingSession.h; sourceTree = "<group>"; };
+		2951C0DE0000000000000005 /* CrewTrackingSession.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrewTrackingSession.m; sourceTree = "<group>"; };
+		2951C0DE0000000000000007 /* CrewTrackingTime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrewTrackingTime.h; sourceTree = "<group>"; };
+		2951C0DE0000000000000008 /* CrewTrackingTime.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrewTrackingTime.m; sourceTree = "<group>"; };
+		2951C0DE000000000000000A /* CrewTrackingUploadResult.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CrewTrackingUploadResult.h; sourceTree = "<group>"; };
+		2951C0DE000000000000000B /* CrewTrackingUploadResult.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CrewTrackingUploadResult.m; sourceTree = "<group>"; };
+		2951C0DE000000000000000D /* TrackingStartOptions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrackingStartOptions.h; sourceTree = "<group>"; };
+		2951C0DE000000000000000E /* TrackingStartOptions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TrackingStartOptions.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +71,16 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				2951C0DE0000000000000001 /* CrewTrackingPointQueue.h */,
+				2951C0DE0000000000000002 /* CrewTrackingPointQueue.m */,
+				2951C0DE0000000000000004 /* CrewTrackingSession.h */,
+				2951C0DE0000000000000005 /* CrewTrackingSession.m */,
+				2951C0DE0000000000000007 /* CrewTrackingTime.h */,
+				2951C0DE0000000000000008 /* CrewTrackingTime.m */,
+				2951C0DE000000000000000A /* CrewTrackingUploadResult.h */,
+				2951C0DE000000000000000B /* CrewTrackingUploadResult.m */,
+				2951C0DE000000000000000D /* TrackingStartOptions.h */,
+				2951C0DE000000000000000E /* TrackingStartOptions.m */,
 				CB40AFCC25B82B4400F1E1E0 /* GeolocationService.h */,
 				CB40AFCA25B82B4400F1E1E0 /* GeolocationService.m */,
 				CB40AFCD25B82B4400F1E1E0 /* NetworkService.h */,
@@ -126,6 +151,11 @@
 				CB40AFD125B82B4400F1E1E0 /* RCTGeolocationModule.m in Sources */,
 				CB40AFD225B82B4400F1E1E0 /* NetworkService.m in Sources */,
 				CB40AFD025B82B4400F1E1E0 /* GeolocationService.m in Sources */,
+				2951C0DE0000000000000003 /* CrewTrackingPointQueue.m in Sources */,
+				2951C0DE0000000000000006 /* CrewTrackingSession.m in Sources */,
+				2951C0DE0000000000000009 /* CrewTrackingTime.m in Sources */,
+				2951C0DE000000000000000C /* CrewTrackingUploadResult.m in Sources */,
+				2951C0DE000000000000000F /* TrackingStartOptions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
