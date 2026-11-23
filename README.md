@@ -40,6 +40,7 @@ Add to AndroidManifest.xml (if these lines do not exist yet):
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 ```
+The library manifest adds the `WAKE_LOCK` permission itself (new in 1.2.0). Crew mode needs it, and your app does not have to declare it.
 2. Inside `<application>` node:
 ```xml
       <service
@@ -134,3 +135,60 @@ Example of HTTP payload:
   ]
 }
 ```
+
+## Crew mode (1.2.0)
+Crew mode is for tracking a shift that ends at a known time. It is optional. You turn it on by adding one key to the headers map.
+
+### Turning it on
+Pass `trackingUntil` in the headers map, which is the third argument of `startTracking`:
+```javascript
+const headers = {
+  Authorization: token,
+  trackingUntil: '2026-11-23T21:00:00Z',
+};
+```
+- `trackingUntil` is an ISO 8601 UTC string. It is the time tracking must stop.
+- The library removes the key before it sends the headers. The server never sees it.
+- Without the key, the library works as in 1.1.2 (see "Without the key" below).
+
+### What crew mode does
+Both platforms:
+- Distance filter: 50 m. The `distanceFilter` argument is ignored.
+- At most one point is kept per minute.
+- Points are uploaded in batches. A tick runs every 60 seconds and sends the points that are waiting.
+- If no request was sent for 2 minutes, the tick sends an empty upload.
+- Only one upload runs at a time. Each upload has a 30-second timeout.
+- If an upload fails, the library keeps the points and sends them with the next batch.
+- If the server answers with a 4xx status, the library drops that batch.
+- The server can answer with `{ "tracking_enabled": true, "tracking_until": "<ISO 8601 UTC>" }`. A new `tracking_until` moves the stop time. `"tracking_enabled": false` ends tracking.
+- The library stops by itself at the stop time. It sends the points taken before that time once, then stops.
+
+Accuracy and interval by platform:
+- iOS: about 10 m accuracy (`kCLLocationAccuracyNearestTenMeters`).
+- Android: a location request every 60 seconds (`updatesIntervalSeconds` is ignored).
+
+### Android notes
+- The service holds a short wake lock for each tick and its upload. It does not hold one for the whole shift.
+- The tick, the empty upload and the stop use `setAndAllowWhileIdle` alarms.
+- In Doze mode these alarms run about every 9 minutes. A phone that lies still may stop up to about 10 minutes after the stop time.
+- The library manifest declares the `WAKE_LOCK` permission and the alarm receiver.
+- The library saves the stop time and the headers in SharedPreferences. If the system restarts the service, it continues with the saved values. It does not restart after the stop time.
+
+### Without the key
+Without `trackingUntil`, the library behaves as 1.1.2. There is one change on Android: `stopTracking` now really stops the service. In 1.1.2 it removed the notification but left the service running.
+
+### Logic tests
+The crew mode rules have tests that run on a computer. They do not need a phone or an emulator.
+- iOS (macOS with Xcode command line tools): `bash ios/Tests/run.sh`
+- Android (plain Java, no Gradle): run the command on the first line of `android/src/test/java/us/clubup/geolocation/CrewLogicTest.java`, from the `android/` folder. It needs `javac` and an `org.json` jar from the Gradle cache.
+
+The podspec excludes `ios/Tests/**`, so the iOS tests are never built into an app. Gradle treats `android/src/test` as the unit-test source set, so the Android test is not built into an app either.
+
+## Changelog
+### 1.2.0
+- New: crew mode, turned on with the `trackingUntil` key in the headers map.
+- New: the library stops by itself at the stop time, and the server can change it or end tracking.
+- New (Android): `WAKE_LOCK` permission in the library manifest.
+- Fixed (Android): `stopTracking` now stops the service. Before, it only removed the notification.
+- Changed: the iOS test harness (`ios/Tests`) is excluded from the pod.
+- No change for apps that do not pass `trackingUntil`, apart from the Android fix.
