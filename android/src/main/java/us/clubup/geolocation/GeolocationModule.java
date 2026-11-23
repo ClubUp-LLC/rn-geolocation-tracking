@@ -27,6 +27,8 @@ import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.Task;
 
+import java.util.HashMap;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -59,12 +61,26 @@ public class GeolocationModule extends ReactContextBaseJavaModule implements Per
     public void startTracking(String uploadUrl, String failureUrl, ReadableMap headers, int updatesIntervalSeconds, int distanceFilter,
             Promise promise) {
 
-        this.config = new GeolocationConfig(uploadUrl, failureUrl, headers.toHashMap(), updatesIntervalSeconds, distanceFilter);
+        this.config = configFor(uploadUrl, failureUrl, headers.toHashMap(), updatesIntervalSeconds, distanceFilter);
         this.startPromise = promise;
 
         performChecksAndStart();
     }
 
+
+    /** A trackingUntil key in the headers turns on crew mode; without it the library behaves as 1.1.2. */
+    private static GeolocationConfig configFor(String uploadUrl, String failureUrl, HashMap<String, Object> headers,
+            int updatesIntervalSeconds, int distanceFilter) {
+
+        if (!TrackingUntilKey.isPresent(headers)) {
+            return new GeolocationConfig(uploadUrl, failureUrl, headers, updatesIntervalSeconds, distanceFilter);
+        }
+        Long trackingUntilMs = TrackingUntilKey.take(headers);
+        if (trackingUntilMs == null) {
+            Log.w("GeolocationModule", "trackingUntil is null or unreadable: tracking stops at once.");
+        }
+        return GeolocationConfig.crewMode(uploadUrl, failureUrl, headers, trackingUntilMs);
+    }
 
     @ReactMethod
     @SuppressWarnings("unused")

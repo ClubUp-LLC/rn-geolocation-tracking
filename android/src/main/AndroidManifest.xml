@@ -1,4 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="us.clubup.geolocation">
 
+    <!-- Crew mode holds a short wake lock for each tick and its upload. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application>
+        <receiver
+                android:name=".CrewAlarmReceiver"
+                android:exported="false" />
+    </application>
+
 </manifest>

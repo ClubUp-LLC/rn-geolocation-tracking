@@ -14,8 +14,10 @@ import android.content.pm.ServiceInfo;
 import android.content.res.TypedArray;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 import android.util.TypedValue;
 
@@ -24,6 +26,8 @@ import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,6 +52,9 @@ public class GeolocationService extends Service {
     private static final int NOTIFICATION_ID_TRACKING = 3862;
     private static final String NOTIFICATION_CHANNEL_ID = "location_service_channel";
 
+    private static final String WAKE_LOCK_TAG = "clubup:geolocationTick";
+    private static final long WAKE_LOCK_LIMIT_MS = 30_000L;
+
 
     @Nullable
     private static GeolocationService instance = null;
@@ -62,6 +69,12 @@ public class GeolocationService extends Service {
     private FusedLocationProviderClient fusedLocationClient;
     private boolean isTracking;
 
+    @Nullable
+    private CrewTracker crewTracker;
+    private CrewStateStore crewStateStore;
+    private Handler mainHandler;
+    private PowerManager.WakeLock tickWakeLock;
+
 
     @Override
     public void onCreate() {
@@ -69,12 +82,16 @@ public class GeolocationService extends Service {
         super.onCreate();
         instance = this;
         createNotificationChannel(this);
+        crewStateStore = new CrewStateStore(this);
+        mainHandler = new Handler(Looper.getMainLooper());
+        tickWakeLock = newWakeLock();
     }
 
     @Override
     public void onDestroy() {
 
         super.onDestroy();
+        releaseTickWakeLock();
         instance = null;
     }
 
@@ -86,13 +103,14 @@ public class GeolocationService extends Service {
         if (intent != null) {
 
             String action = intent.getAction();
+            this.startId = startId;
 
             switch (action) {
                 case ACTION_START:
-                    handleStart(intent, startId);
+                    handleStart(intent, (flags & START_FLAG_REDELIVERY) != 0);
                     return START_REDELIVER_INTENT;
                 case ACTION_STOP:
-                    handleStop();
+                    handleStop(crewTracker != null ? crewTracker.stop() : Collections.<TrackedPoint>emptyList());
                     return START_NOT_STICKY;
             }
         }
@@ -100,21 +118,64 @@ public class GeolocationService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void handleStart(Intent intent, int startId) {
+    private void handleStart(Intent intent, boolean redelivered) {
 
-        this.startId = startId;
         startAsForeground();
-        config = intent.getParcelableExtra(EXTRA_CONFIG);
-        startTracking();
+        GeolocationConfig startConfig = intent.getParcelableExtra(EXTRA_CONFIG);
+        if (startConfig.isCrewMode()) {
+            startCrewMode(startConfig, redelivered);
+        }
+        else {
+            endCrewMode();
+            config = startConfig;
+            startTracking();
+        }
     }
 
-    private void handleStop() {
+    private void startCrewMode(GeolocationConfig startConfig, boolean redelivered) {
+
+        // A redelivered intent holds the first token and stop time; the store holds the newest.
+        GeolocationConfig crewConfig = redelivered ? crewStateStore.load() : startConfig;
+        Long stopTimeMs = crewConfig != null ? crewConfig.getTrackingUntilMs() : null;
+        long nowMs = System.currentTimeMillis();
+        boolean mayTrack = redelivered ? CrewTracker.canResume(stopTimeMs, nowMs) : stopTimeMs != null;
+        if (!mayTrack) {
+            handleStop(crewTracker != null ? crewTracker.stop() : Collections.<TrackedPoint>emptyList());
+            return;
+        }
+
+        crewStateStore.save(crewConfig);
+        config = crewConfig;
+        if (crewTracker == null) {
+            crewTracker = new CrewTracker(stopTimeMs, nowMs);
+        }
+        else {
+            crewTracker.changeStopTime(stopTimeMs);
+        }
+        startTracking();
+        runCrewTick();
+    }
+
+    private void endCrewMode() {
+
+        crewTracker = null;
+        CrewAlarms.cancelAll(this);
+        crewStateStore.clear();
+        releaseTickWakeLock();
+    }
+
+    /** Stops everything; lastPoints are crew points sent once, without retry, with their answer ignored. */
+    private void handleStop(List<TrackedPoint> lastPoints) {
 
         Log.d(TAG, "stopTracking");
 
+        if (!lastPoints.isEmpty() && config != null) {
+            sendLastPoints(lastPoints, config);
+        }
         if (fusedLocationClient != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
         }
+        endCrewMode();
         config = null;
         isTracking = false;
         stopForeground(true);
@@ -176,7 +237,9 @@ public class GeolocationService extends Service {
 
         isTracking = true;
 
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+        if (fusedLocationClient == null) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+        }
         if (hasLocationPermission()) {
             fusedLocationClient.requestLocationUpdates(config.toLocationRequest(), locationCallback, Looper.getMainLooper());
         }
@@ -192,9 +255,138 @@ public class GeolocationService extends Service {
 
     private void processLocations(List<Location> locations) {
 
-        if (config != null) {
-            executorService.execute(new SendLocations(locations, config.getUploadUrl(), config.getHeaders()));
+        if (crewTracker != null) {
+            for (Location location : locations) {
+                crewTracker.addReading(toTrackedPoint(location));
+            }
+            runCrewTick();
         }
+        else if (config != null) {
+            executorService.execute(SendLocations.legacy(toTrackedPoints(locations), config.getUploadUrl(), config.getHeaders()));
+        }
+    }
+
+    private void runCrewTick() {
+
+        if (crewTracker == null) {
+            return;
+        }
+        tickWakeLock.acquire(WAKE_LOCK_LIMIT_MS);
+        long nowMs = System.currentTimeMillis();
+        CrewTracker.Tick tick = crewTracker.tick(nowMs);
+        if (tick.action == CrewTracker.Tick.Action.STOP) {
+            handleStop(tick.batch);
+            return;
+        }
+        if (tick.action == CrewTracker.Tick.Action.SEND) {
+            uploadCrewBatch(tick);
+        }
+        CrewAlarms.scheduleHeartbeat(this, crewTracker.heartbeatAlarmAt(nowMs));
+        CrewAlarms.scheduleStopTime(this, crewTracker.stopAlarmAt(nowMs));
+        if (!crewTracker.isUploading()) {
+            releaseTickWakeLock();
+        }
+    }
+
+    private void uploadCrewBatch(CrewTracker.Tick tick) {
+
+        final CrewTracker tracker = crewTracker;
+        final int uploadId = tick.uploadId;
+        executorService.execute(SendLocations.crew(tick.batch, config.getUploadUrl(), config.getHeaders(),
+                new SendLocations.Listener() {
+
+                    @Override
+                    public void onAnswered(int statusCode, @Nullable String body) {
+
+                        mainHandler.post(() -> onCrewUploadAnswered(tracker, uploadId, statusCode, body));
+                    }
+
+                    @Override
+                    public void onFailed() {
+
+                        mainHandler.post(() -> onCrewUploadFailed(tracker, uploadId));
+                    }
+                }));
+    }
+
+    private void onCrewUploadAnswered(CrewTracker tracker, int uploadId, int statusCode, @Nullable String body) {
+
+        if (tracker != crewTracker) {
+            return;
+        }
+        long previousStopTimeMs = tracker.stopTimeMs();
+        tracker.onUploadAnswered(uploadId, statusCode, body);
+        if (tracker.stopTimeMs() != previousStopTimeMs) {
+            crewStateStore.saveStopTime(tracker.stopTimeMs());
+        }
+        runCrewTick();
+    }
+
+    private void onCrewUploadFailed(CrewTracker tracker, int uploadId) {
+
+        if (tracker != crewTracker) {
+            return;
+        }
+        tracker.onUploadFailed(uploadId);
+        runCrewTick();
+    }
+
+    private void sendLastPoints(List<TrackedPoint> points, GeolocationConfig lastConfig) {
+
+        final PowerManager.WakeLock sendWakeLock = newWakeLock();
+        sendWakeLock.acquire(WAKE_LOCK_LIMIT_MS);
+        executorService.execute(SendLocations.crew(points, lastConfig.getUploadUrl(), lastConfig.getHeaders(),
+                new SendLocations.Listener() {
+
+                    @Override
+                    public void onAnswered(int statusCode, @Nullable String body) {
+
+                        release(sendWakeLock);
+                    }
+
+                    @Override
+                    public void onFailed() {
+
+                        release(sendWakeLock);
+                    }
+                }));
+    }
+
+    private PowerManager.WakeLock newWakeLock() {
+
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG);
+        wakeLock.setReferenceCounted(false);
+        return wakeLock;
+    }
+
+    private void releaseTickWakeLock() {
+
+        if (tickWakeLock != null) {
+            release(tickWakeLock);
+        }
+    }
+
+    private static void release(PowerManager.WakeLock wakeLock) {
+
+        if (wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+    }
+
+    private static List<TrackedPoint> toTrackedPoints(List<Location> locations) {
+
+        List<TrackedPoint> points = new ArrayList<>(locations.size());
+        for (Location location : locations) {
+            points.add(toTrackedPoint(location));
+        }
+        return points;
+    }
+
+    private static TrackedPoint toTrackedPoint(Location location) {
+
+        return new TrackedPoint(location.getTime(), location.getLatitude(), location.getLongitude(),
+                location.getAccuracy(), location.getAltitude());
     }
 
     @Nullable
@@ -231,10 +423,18 @@ public class GeolocationService extends Service {
         }
     }
 
+    static void runCrewTickIfTracking() {
+
+        if (instance != null) {
+            instance.runCrewTick();
+        }
+    }
+
     public static void startTracking(Context context, GeolocationConfig config) {
 
-        boolean alreadyTracking = instance != null && instance.isTracking;
-        if (alreadyTracking) {
+        // A crew start, or a 1.1.2 start that ends crew mode, must reach the running service.
+        boolean alreadyTracking = instance != null && instance.isTracking && instance.crewTracker == null;
+        if (alreadyTracking && !config.isCrewMode()) {
             Log.w(TAG, "Already tracking.");
             return;
         }
@@ -256,16 +456,19 @@ public class GeolocationService extends Service {
         }
     }
 
+    /** Works without in-memory state: the stop also reaches a service the system restarted for an earlier app run. */
     public static void stopTracking(Context context) {
 
-        boolean alreadyStopped = instance == null || !instance.isTracking;
-        if (alreadyStopped) {
-            Log.w(TAG, "Already not tracking.");
-            return;
-        }
+        new CrewStateStore(context).clear();
+        CrewAlarms.cancelAll(context);
 
         Intent intent = new Intent(context, GeolocationService.class);
         intent.setAction(ACTION_STOP);
-        context.startService(intent);
+        try {
+            context.startService(intent);
+        }
+        catch (IllegalStateException | SecurityException e) {
+            Log.e(TAG, "Unable to stop service", e);
+        }
     }
 }
